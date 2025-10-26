@@ -334,18 +334,46 @@ def train_model(model, epochs, optimizer, train_loader, test_loader, criterion, 
       print(f"Epoch {epoch} - Train_Loss: {running_loss/len(train_loader):.4f} , Train_acc: {train_acc}, Test_acc : {test_acc}")
 
 if __name__ == '__main__':
-    model = vgg(cfg_vgg6, num_classes=10, batch_norm=True)
+    # Set device
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    print(f"Using device: {device}")
+    
+    # Create model
+    model = vgg(cfg_vgg6, num_classes=10, batch_norm=True).to(device)
     print(model)
     
-    train_loader, test_loader = GetCifar10(64)
+    # Load data
+    batch_size = 64
+    train_loader, test_loader = GetCifar10(batch_size)
     
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    
-    model = vgg(cfg_vgg6, num_classes=10, batch_norm=True).to(device)
-    
+    # Training parameters
     criterion = nn.CrossEntropyLoss()
-    lr = 0.001
-    epochs = 100
-    optimizer = optim.Adam(model.parameters(), lr=lr)
+    learning_rate = 0.01  # Updated learning rate
+    epochs = 20  # Train for 20 epochs
+    optimizer = optim.Adam(model.parameters(), lr=learning_rate)
     
-    train_model(model, 10, optimizer, train_loader, test_loader, criterion, device)
+    print(f"Starting training with parameters:")
+    print(f"  - Epochs: {epochs}")
+    print(f"  - Batch Size: {batch_size}")
+    print(f"  - Learning Rate: {learning_rate}")
+    print(f"  - Optimizer: Adam")
+    print(f"  - Activation: ReLU (built into VGG architecture)")
+    print(f"  - Device: {device}")
+    print("-" * 50)
+    
+    train_model(model, epochs, optimizer, train_loader, test_loader, criterion, device)
+    
+    # Save the trained model
+    model_save_path = 'trained_vgg6_model.pth'
+    torch.save({
+        'model_state_dict': model.state_dict(),
+        'optimizer_state_dict': optimizer.state_dict(),
+        'epochs': epochs,
+        'batch_size': batch_size,
+        'learning_rate': learning_rate,
+        'optimizer_type': 'Adam',
+        'model_config': cfg_vgg6
+    }, model_save_path)
+    
+    print(f"Model saved to {model_save_path}")
+    print("Training completed! Run 'python test.py' to evaluate the model on test data.")
